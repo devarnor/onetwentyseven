@@ -9,12 +9,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
+import { TenantAccessGuard } from '../auth/tenant-access.guard';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 
 @Controller('tenants/:tenantId/accounts')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, TenantAccessGuard)
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
