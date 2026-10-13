@@ -9,23 +9,23 @@ import type { AuthPrincipal } from './auth.types';
 
 @Injectable()
 export class AuthService {
-  private readonly tenantId: string;
+  private readonly entraTenantId: string;
   private readonly apiClientId: string;
   private readonly webClientId: string;
   private readonly issuer: string;
   private readonly jwks: ReturnType<typeof createRemoteJWKSet>;
 
   constructor(private readonly configService: ConfigService) {
-    this.tenantId = this.requireConfig('ENTRA_TENANT_ID');
+    this.entraTenantId = this.requireConfig('ENTRA_TENANT_ID');
     this.apiClientId = this.requireConfig('ENTRA_API_CLIENT_ID');
     this.webClientId = this.requireConfig('ENTRA_WEB_CLIENT_ID');
 
     this.issuer =
-      `https://login.microsoftonline.com/${this.tenantId}/v2.0`;
+      `https://login.microsoftonline.com/${this.entraTenantId}/v2.0`;
 
     this.jwks = createRemoteJWKSet(
       new URL(
-        `https://login.microsoftonline.com/${this.tenantId}/discovery/v2.0/keys`,
+        `https://login.microsoftonline.com/${this.entraTenantId}/discovery/v2.0/keys`,
       ),
     );
   }
@@ -52,7 +52,7 @@ export class AuthService {
       const subject = this.requireClaim(payload, 'sub');
 
       return {
-        tenantId: this.tenantId,
+        entraTenantId: this.entraTenantId,
         objectId,
         subject,
         clientId: this.webClientId,
@@ -78,7 +78,7 @@ export class AuthService {
   }
 
   private validateTenant(payload: JWTPayload): void {
-    if (payload.tid !== this.tenantId) {
+    if (payload.tid !== this.entraTenantId) {
       throw new UnauthorizedException(
         'Access token tenant is not authorized.',
       );

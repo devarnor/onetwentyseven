@@ -1,5 +1,5 @@
 export interface AuthPrincipal {
-  tenantId: string;
+  entraTenantId: string;
   objectId: string;
   subject: string;
   clientId: string;
