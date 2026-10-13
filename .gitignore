@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+.env.*
+*.log
+.DS_Store
+127-api-ready.zip
