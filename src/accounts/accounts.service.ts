@@ -109,6 +109,7 @@ export class AccountsService {
 
   async create(
     tenantId: string,
+    actorUserId: string,
     dto: CreateAccountDto,
   ): Promise<AccountRow> {
     const id = randomUUID();
@@ -137,13 +138,15 @@ export class AccountsService {
               status,
               source,
               external_id,
-              metadata
+              metadata,
+              created_by_user_id,
+              updated_by_user_id
             )
             VALUES (
               $1, $2, $3, $4, $5, $6,
               $7, $8, $9, $10, $11, $12,
               $13, $14, $15, $16, $17, $18,
-              $19, $20
+              $19, $20, $21, $22
             )
             RETURNING ${this.selectColumns}
           `,
@@ -168,6 +171,8 @@ export class AccountsService {
             dto.source ?? null,
             dto.externalId ?? null,
             dto.metadata ?? {},
+            actorUserId,
+            actorUserId,
           ],
         );
 
@@ -180,6 +185,7 @@ export class AccountsService {
           action: 'created',
           version: account.version,
           source: dto.source ?? '127-api',
+          actorUserId,
           afterData: account,
           metadata: {
             accountName: account.name,
@@ -196,6 +202,7 @@ export class AccountsService {
   async update(
     tenantId: string,
     accountId: string,
+    actorUserId: string,
     dto: UpdateAccountDto,
   ): Promise<AccountRow> {
     try {
@@ -245,11 +252,12 @@ export class AccountsService {
               source = COALESCE($18, source),
               external_id = COALESCE($19, external_id),
               metadata = COALESCE($20::jsonb, metadata),
+              updated_by_user_id = $21,
               version = version + 1,
               updated_at = CURRENT_TIMESTAMP
             WHERE tenant_id = $1
               AND id = $2
-              AND version = $21
+              AND version = $22
             RETURNING ${this.selectColumns}
           `,
           [
@@ -273,6 +281,7 @@ export class AccountsService {
             dto.source ?? null,
             dto.externalId ?? null,
             dto.metadata ? JSON.stringify(dto.metadata) : null,
+            actorUserId,
             dto.expectedVersion,
           ],
         );
@@ -292,6 +301,7 @@ export class AccountsService {
           action: 'updated',
           version: account.version,
           source: dto.source ?? account.source ?? '127-api',
+          actorUserId,
           beforeData: existing,
           afterData: account,
           metadata: {

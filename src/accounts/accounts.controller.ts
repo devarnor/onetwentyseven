@@ -9,7 +9,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { TenantAccessGuard } from '../auth/tenant-access.guard';
+import type { AuthPrincipal } from '../auth/auth.types';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
@@ -41,9 +43,14 @@ export class AccountsController {
   create(
     @Param('tenantId', new ParseUUIDPipe({ version: '4' }))
     tenantId: string,
+    @CurrentUser() currentUser: AuthPrincipal,
     @Body() dto: CreateAccountDto,
   ) {
-    return this.accountsService.create(tenantId, dto);
+    return this.accountsService.create(
+      tenantId,
+      currentUser.userId!,
+      dto,
+    );
   }
 
   @Patch(':accountId')
@@ -52,8 +59,14 @@ export class AccountsController {
     tenantId: string,
     @Param('accountId', new ParseUUIDPipe({ version: '4' }))
     accountId: string,
+    @CurrentUser() currentUser: AuthPrincipal,
     @Body() dto: UpdateAccountDto,
   ) {
-    return this.accountsService.update(tenantId, accountId, dto);
+    return this.accountsService.update(
+      tenantId,
+      accountId,
+      currentUser.userId!,
+      dto,
+    );
   }
 }
