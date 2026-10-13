@@ -6,4 +6,8 @@ export interface AuthPrincipal {
   scopes: string[];
   displayName?: string;
   username?: string;
+
+  applicationTenantId?: string;
+  userId?: string;
+  membershipId?: string;
 }
