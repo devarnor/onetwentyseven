@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { DatabaseService } from '../database.service';
+import { TrackingService } from '../tracking/tracking.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 
@@ -37,7 +38,10 @@ interface AccountRow {
 
 @Injectable()
 export class AccountsService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly trackingService: TrackingService,
+  ) {}
 
   private readonly selectColumns = `
     id,
@@ -110,63 +114,80 @@ export class AccountsService {
     const id = randomUUID();
 
     try {
-      const result = await this.databaseService.query<AccountRow>(
-        `
-          INSERT INTO accounts (
+      return await this.databaseService.transaction(async (client) => {
+        const result = await client.query<AccountRow>(
+          `
+            INSERT INTO accounts (
+              id,
+              tenant_id,
+              organization_id,
+              owner_user_id,
+              name,
+              legal_name,
+              account_type,
+              industry,
+              website,
+              phone,
+              billing_address_line1,
+              billing_address_line2,
+              billing_city,
+              billing_state_region,
+              billing_postal_code,
+              billing_country_code,
+              status,
+              source,
+              external_id,
+              metadata
+            )
+            VALUES (
+              $1, $2, $3, $4, $5, $6,
+              $7, $8, $9, $10, $11, $12,
+              $13, $14, $15, $16, $17, $18,
+              $19, $20
+            )
+            RETURNING ${this.selectColumns}
+          `,
+          [
             id,
-            tenant_id,
-            organization_id,
-            owner_user_id,
-            name,
-            legal_name,
-            account_type,
-            industry,
-            website,
-            phone,
-            billing_address_line1,
-            billing_address_line2,
-            billing_city,
-            billing_state_region,
-            billing_postal_code,
-            billing_country_code,
-            status,
-            source,
-            external_id,
-            metadata
-          )
-          VALUES (
-            $1, $2, $3, $4, $5, $6,
-            $7, $8, $9, $10, $11, $12,
-            $13, $14, $15, $16, $17, $18,
-            $19, $20
-          )
-          RETURNING ${this.selectColumns}
-        `,
-        [
-          id,
-          tenantId,
-          dto.organizationId ?? null,
-          dto.ownerUserId ?? null,
-          dto.name,
-          dto.legalName ?? null,
-          dto.accountType ?? 'prospect',
-          dto.industry ?? null,
-          dto.website ?? null,
-          dto.phone ?? null,
-          dto.billingAddressLine1 ?? null,
-          dto.billingAddressLine2 ?? null,
-          dto.billingCity ?? null,
-          dto.billingStateRegion ?? null,
-          dto.billingPostalCode ?? null,
-          dto.billingCountryCode ?? null,
-          dto.status ?? 'active',
-          dto.source ?? null,
-          dto.externalId ?? null,
-          dto.metadata ?? {},
-        ],
-      );
+            tenantId,
+            dto.organizationId ?? null,
+            dto.ownerUserId ?? null,
+            dto.name,
+            dto.legalName ?? null,
+            dto.accountType ?? 'prospect',
+            dto.industry ?? null,
+            dto.website ?? null,
+            dto.phone ?? null,
+            dto.billingAddressLine1 ?? null,
+            dto.billingAddressLine2 ?? null,
+            dto.billingCity ?? null,
+            dto.billingStateRegion ?? null,
+            dto.billingPostalCode ?? null,
+            dto.billingCountryCode ?? null,
+            dto.status ?? 'active',
+            dto.source ?? null,
+            dto.externalId ?? null,
+            dto.metadata ?? {},
+          ],
+        );
 
-      return result.rows[0];
+        const account = result.rows[0];
+
+        await this.trackingService.recordMutation(client, {
+          tenantId,
+          entityType: 'account',
+          entityId: account.id,
+          action: 'created',
+          version: account.version,
+          source: dto.source ?? '127-api',
+          afterData: account,
+          metadata: {
+            accountName: account.name,
+          },
+        });
+
+        return account;
+      });
     } catch (error) {
       this.handleDatabaseError(error);
     }
@@ -178,84 +199,109 @@ export class AccountsService {
     dto: UpdateAccountDto,
   ): Promise<AccountRow> {
     try {
-      const result = await this.databaseService.query<AccountRow>(
-        `
-          UPDATE accounts
-          SET
-            name = COALESCE($3, name),
-            legal_name = COALESCE($4, legal_name),
-            organization_id = COALESCE($5, organization_id),
-            owner_user_id = COALESCE($6, owner_user_id),
-            account_type = COALESCE($7, account_type),
-            industry = COALESCE($8, industry),
-            website = COALESCE($9, website),
-            phone = COALESCE($10, phone),
-            billing_address_line1 = COALESCE($11, billing_address_line1),
-            billing_address_line2 = COALESCE($12, billing_address_line2),
-            billing_city = COALESCE($13, billing_city),
-            billing_state_region = COALESCE($14, billing_state_region),
-            billing_postal_code = COALESCE($15, billing_postal_code),
-            billing_country_code = COALESCE($16, billing_country_code),
-            status = COALESCE($17, status),
-            source = COALESCE($18, source),
-            external_id = COALESCE($19, external_id),
-            metadata = COALESCE($20::jsonb, metadata),
-            version = version + 1,
-            updated_at = CURRENT_TIMESTAMP
-          WHERE tenant_id = $1
-            AND id = $2
-            AND version = $21
-          RETURNING ${this.selectColumns}
-        `,
-        [
+      return await this.databaseService.transaction(async (client) => {
+        const existingResult = await client.query<AccountRow>(
+          `
+            SELECT ${this.selectColumns}
+            FROM accounts
+            WHERE tenant_id = $1
+              AND id = $2
+            FOR UPDATE
+          `,
+          [tenantId, accountId],
+        );
+
+        const existing = existingResult.rows[0];
+
+        if (!existing) {
+          throw new NotFoundException('Account not found');
+        }
+
+        if (existing.version !== dto.expectedVersion) {
+          throw new ConflictException(
+            `Account version conflict. Current version is ${existing.version}.`,
+          );
+        }
+
+        const result = await client.query<AccountRow>(
+          `
+            UPDATE accounts
+            SET
+              name = COALESCE($3, name),
+              legal_name = COALESCE($4, legal_name),
+              organization_id = COALESCE($5, organization_id),
+              owner_user_id = COALESCE($6, owner_user_id),
+              account_type = COALESCE($7, account_type),
+              industry = COALESCE($8, industry),
+              website = COALESCE($9, website),
+              phone = COALESCE($10, phone),
+              billing_address_line1 = COALESCE($11, billing_address_line1),
+              billing_address_line2 = COALESCE($12, billing_address_line2),
+              billing_city = COALESCE($13, billing_city),
+              billing_state_region = COALESCE($14, billing_state_region),
+              billing_postal_code = COALESCE($15, billing_postal_code),
+              billing_country_code = COALESCE($16, billing_country_code),
+              status = COALESCE($17, status),
+              source = COALESCE($18, source),
+              external_id = COALESCE($19, external_id),
+              metadata = COALESCE($20::jsonb, metadata),
+              version = version + 1,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE tenant_id = $1
+              AND id = $2
+              AND version = $21
+            RETURNING ${this.selectColumns}
+          `,
+          [
+            tenantId,
+            accountId,
+            dto.name ?? null,
+            dto.legalName ?? null,
+            dto.organizationId ?? null,
+            dto.ownerUserId ?? null,
+            dto.accountType ?? null,
+            dto.industry ?? null,
+            dto.website ?? null,
+            dto.phone ?? null,
+            dto.billingAddressLine1 ?? null,
+            dto.billingAddressLine2 ?? null,
+            dto.billingCity ?? null,
+            dto.billingStateRegion ?? null,
+            dto.billingPostalCode ?? null,
+            dto.billingCountryCode ?? null,
+            dto.status ?? null,
+            dto.source ?? null,
+            dto.externalId ?? null,
+            dto.metadata ? JSON.stringify(dto.metadata) : null,
+            dto.expectedVersion,
+          ],
+        );
+
+        const account = result.rows[0];
+
+        if (!account) {
+          throw new ConflictException(
+            'Account was modified by another request.',
+          );
+        }
+
+        await this.trackingService.recordMutation(client, {
           tenantId,
-          accountId,
-          dto.name ?? null,
-          dto.legalName ?? null,
-          dto.organizationId ?? null,
-          dto.ownerUserId ?? null,
-          dto.accountType ?? null,
-          dto.industry ?? null,
-          dto.website ?? null,
-          dto.phone ?? null,
-          dto.billingAddressLine1 ?? null,
-          dto.billingAddressLine2 ?? null,
-          dto.billingCity ?? null,
-          dto.billingStateRegion ?? null,
-          dto.billingPostalCode ?? null,
-          dto.billingCountryCode ?? null,
-          dto.status ?? null,
-          dto.source ?? null,
-          dto.externalId ?? null,
-          dto.metadata ? JSON.stringify(dto.metadata) : null,
-          dto.expectedVersion,
-        ],
-      );
+          entityType: 'account',
+          entityId: account.id,
+          action: 'updated',
+          version: account.version,
+          source: dto.source ?? account.source ?? '127-api',
+          beforeData: existing,
+          afterData: account,
+          metadata: {
+            previousVersion: existing.version,
+            currentVersion: account.version,
+          },
+        });
 
-      const account = result.rows[0];
-
-      if (account) {
         return account;
-      }
-
-      const existing = await this.databaseService.query<{ version: number }>(
-        `
-          SELECT version
-          FROM accounts
-          WHERE tenant_id = $1
-            AND id = $2
-          LIMIT 1
-        `,
-        [tenantId, accountId],
-      );
-
-      if (!existing.rows[0]) {
-        throw new NotFoundException('Account not found');
-      }
-
-      throw new ConflictException(
-        `Account version conflict. Current version is ${existing.rows[0].version}.`,
-      );
+      });
     } catch (error) {
       if (
         error instanceof NotFoundException ||
