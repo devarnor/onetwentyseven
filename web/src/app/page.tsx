@@ -18,7 +18,7 @@ import {
   apiScope,
   bridgewayTenantId,
 } from "@/auth/msal";
-import OrganizationsWorkspace from "@/components/organizations-workspace";
+import GrowthWorkspace from "@/components/growth-workspace";
 import styles from "./page.module.css";
 
 interface AccountRecord {
@@ -311,7 +311,7 @@ function CommandPortal({
         </aside>
 
         {activeWorkspace === "organizations" ? (
-          <OrganizationsWorkspace account={account} />
+          <GrowthWorkspace account={account} />
         ) : (
         <section className={styles.workspace}>
           <div className={styles.welcome}>

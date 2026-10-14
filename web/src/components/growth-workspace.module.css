@@ -1,0 +1,49 @@
+.growth {
+  width: 100%;
+}
+
+.subnav {
+  height: 48px;
+  padding: 0 4vw;
+  display: flex;
+  align-items: stretch;
+  gap: 26px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  background: #08131c;
+}
+
+.subnav button {
+  position: relative;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #617581;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.subnav button:hover {
+  color: #d4dce0;
+}
+
+.subnav button.active {
+  color: #c7a25f;
+}
+
+.subnav button.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: #c7a25f;
+}
+
+@media(max-width:900px) {
+  .subnav {
+    padding: 0 18px;
+  }
+}
