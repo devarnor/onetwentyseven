@@ -4,6 +4,7 @@ import { AccountsModule } from './accounts/accounts.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database.module';
+import { FacilitiesModule } from './facilities/facilities.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { TrackingModule } from './tracking/tracking.module';
 
@@ -13,6 +14,7 @@ import { TrackingModule } from './tracking/tracking.module';
       isGlobal: true,
     }),
     DatabaseModule,
+    FacilitiesModule,
     AuthModule,
     TrackingModule,
     AccountsModule,
