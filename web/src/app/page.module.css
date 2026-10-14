@@ -705,3 +705,88 @@
 .loginFooter {
   font-size: 10px;
 }
+
+/* Interactive Command / Growth navigation */
+.commandHeader nav button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #667985;
+  font: inherit;
+  cursor: pointer;
+}
+
+.commandHeader nav button:hover {
+  color: #d6dde1;
+}
+
+.commandHeader nav button.activeNav {
+  color: #c7a25f;
+}
+
+/* Final 127 readability refinement */
+
+.commandHeader nav {
+  font-size: 14px;
+}
+
+.user > span {
+  font-size: 13px;
+}
+
+.user small {
+  font-size: 11px;
+}
+
+.commandLayout aside small {
+  font-size: 11px;
+}
+
+.commandLayout aside strong,
+.commandLayout aside span {
+  font-size: 13px;
+}
+
+.cards article small {
+  font-size: 11px;
+}
+
+.cards span {
+  font-size: 12px;
+}
+
+.production {
+  font-size: 12px;
+}
+
+.lifecycle > small {
+  font-size: 11px;
+}
+
+.lifecycle b {
+  font-size: 11px;
+}
+
+.lifecycle strong {
+  font-size: 14px;
+}
+
+.lifecycle article span {
+  font-size: 11px;
+}
+
+.bottomCards small {
+  font-size: 11px;
+}
+
+.bottomCards p {
+  font-size: 12px;
+}
+
+.brand span {
+  font-size: 16px;
+}
+
+.brand small {
+  font-size: 10px;
+}

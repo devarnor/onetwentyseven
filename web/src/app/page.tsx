@@ -18,6 +18,7 @@ import {
   apiScope,
   bridgewayTenantId,
 } from "@/auth/msal";
+import OrganizationsWorkspace from "@/components/organizations-workspace";
 import styles from "./page.module.css";
 
 interface AccountRecord {
@@ -178,6 +179,9 @@ function CommandPortal({
 }) {
   const { instance } = useMsal();
 
+  const [activeWorkspace, setActiveWorkspace] =
+    useState<"command" | "organizations">("command");
+
   const [accountCount, setAccountCount] =
     useState<number | null>(null);
 
@@ -235,10 +239,34 @@ function CommandPortal({
         <Brand />
 
         <nav>
-          <span className={styles.activeNav}>
+          <button
+            type="button"
+            className={
+              activeWorkspace === "command"
+                ? styles.activeNav
+                : undefined
+            }
+            onClick={() =>
+              setActiveWorkspace("command")
+            }
+          >
             Command
-          </span>
-          <span>Growth</span>
+          </button>
+
+          <button
+            type="button"
+            className={
+              activeWorkspace === "organizations"
+                ? styles.activeNav
+                : undefined
+            }
+            onClick={() =>
+              setActiveWorkspace("organizations")
+            }
+          >
+            Growth
+          </button>
+
           <span>Develop</span>
           <span>Capital</span>
           <span>Projects</span>
@@ -282,6 +310,9 @@ function CommandPortal({
           <span>⚙ &nbsp; Administration</span>
         </aside>
 
+        {activeWorkspace === "organizations" ? (
+          <OrganizationsWorkspace account={account} />
+        ) : (
         <section className={styles.workspace}>
           <div className={styles.welcome}>
             <div>
@@ -434,6 +465,7 @@ function CommandPortal({
             </article>
           </div>
         </section>
+        )}
       </div>
     </main>
   );
