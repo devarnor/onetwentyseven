@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
 import { AccountsModule } from './accounts/accounts.module';
+import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 import { TrackingModule } from './tracking/tracking.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { TrackingModule } from './tracking/tracking.module';
     AuthModule,
     TrackingModule,
     AccountsModule,
+    OrganizationsModule,
   ],
   controllers: [AppController],
 })
