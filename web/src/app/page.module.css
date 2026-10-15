@@ -790,3 +790,20 @@
 .brand small {
   font-size: 10px;
 }
+
+/* Administration sidebar navigation */
+.commandLayout aside button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.commandLayout aside button:hover,
+.commandLayout aside button.activeAside {
+  color: #c6a15e;
+}

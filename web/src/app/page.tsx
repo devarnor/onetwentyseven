@@ -19,6 +19,7 @@ import {
   bridgewayTenantId,
 } from "@/auth/msal";
 import GrowthWorkspace from "@/components/growth-workspace";
+import AdministrationWorkspace from "@/components/administration-workspace";
 import styles from "./page.module.css";
 
 interface AccountRecord {
@@ -180,7 +181,7 @@ function CommandPortal({
   const { instance } = useMsal();
 
   const [activeWorkspace, setActiveWorkspace] =
-    useState<"command" | "organizations">("command");
+    useState<"command" | "organizations" | "administration">("command");
 
   const [accountCount, setAccountCount] =
     useState<number | null>(null);
@@ -307,11 +308,27 @@ function CommandPortal({
           <span>≡ &nbsp; Ledger</span>
 
           <div />
-          <span>⚙ &nbsp; Administration</span>
+          <button
+            type="button"
+            className={
+              activeWorkspace === "administration"
+                ? styles.activeAside
+                : undefined
+            }
+            onClick={() =>
+              setActiveWorkspace("administration")
+            }
+          >
+            ⚙ &nbsp; Administration
+          </button>
         </aside>
 
         {activeWorkspace === "organizations" ? (
           <GrowthWorkspace account={account} />
+        ) : activeWorkspace === "administration" ? (
+          <AdministrationWorkspace
+            account={account}
+          />
         ) : (
         <section className={styles.workspace}>
           <div className={styles.welcome}>
