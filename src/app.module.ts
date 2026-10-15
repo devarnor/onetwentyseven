@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AccountsModule } from './accounts/accounts.module';
+import { AdministrationModule } from './administration/administration.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database.module';
@@ -14,6 +15,7 @@ import { TrackingModule } from './tracking/tracking.module';
       isGlobal: true,
     }),
     DatabaseModule,
+    AdministrationModule,
     FacilitiesModule,
     AuthModule,
     TrackingModule,
